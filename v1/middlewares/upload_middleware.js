@@ -32,6 +32,8 @@ module.exports = async (req, res, next) => {
             "code": 7,
             "error": "Payload Too Large. Limit 10MB"
         });
+
+        return;
     }
 
     let user = await User.findOne({
