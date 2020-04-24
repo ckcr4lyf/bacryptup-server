@@ -1,7 +1,6 @@
-### Not an actual readme, just for drafting API shit
+# Bacryptup
 
-## Options for uploading a file
+This is the server side code. 
+It is not completely polished and the service is also in a beta stage.
 
-* Command line specify password, only send encrypted file + iv
-* Specify public key, send encrypted file + encrypted password
-* Specify nothing, generate random key and show to user, only send encrypted file + iv
+Feel free to open issues or ask me question, but an proper README and deployment guides are still WIP
