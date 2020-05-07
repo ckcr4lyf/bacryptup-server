@@ -11,7 +11,9 @@ module.exports = (req, res) => {
     const AWS_SECRET_KEY = process.env.AWS_SECRET_KEY;
     const BUCKET_NAME = "ezbkup";
 
-    const DEFAULT_FOLDER = "solo";
+    const DEFAULT_FOLDER = "anon";
+
+    let FOLDER = DEFAULT_FOLDER;
 
     let s3 = new AWS.S3({
         accessKeyId: AWS_KEY_ID,
@@ -22,37 +24,39 @@ module.exports = (req, res) => {
     let targetName;
     let backup = null;
 
-    if (req.backupId){
-        targetName = req.accessToken + '/' + req.backupId + '/' + id + '_' + req.filename;
-        backup = {
-            user: req.accessToken,
-            backupId: req.backupId
-        }
-    } else {
-        targetName = DEFAULT_FOLDER + '/' + id + '_' + req.filename;
-    }
+    // if (req.backupId){
+    //     targetName = req.accessToken + '/' + req.backupId + '/' + id + '_' + req.filename;
+    //     backup = {
+    //         user: req.accessToken,
+    //         backupId: req.backupId
+    //     }
+    // } else {
+    //     targetName = FOLDER + '/' + id + '_' + req.filename;
+    // }
 
     let sizeFlag = false;
+
+    let fileObj = {
+        original_name: req.filename,
+        uniq_id: id,
+        expiry: Date.now() + req.expiry
+    }
+
+    if (req.user){
+        fileObj.user = req.user.accessToken;
+        FOLDER = req.user.accessToken;
+    } else {
+        fileObj.anon = true;
+    }
+
+    targetName = FOLDER + '/' + id + '_' + req.filename;
+    fileObj.s3_path = targetName;
 
     let params = {
         Bucket: BUCKET_NAME,
         Key: targetName,
         Body: req
-    }
-
-    let fileObj = {
-        original_name: req.filename,
-        s3_path: targetName,
-        uniq_id: id,
-        user: req.user.accessToken
-    }
-
-    if (typeof req.contentLength == "number" && !isNaN(req.contentLength)){
-        console.log(`Set ContentLength to ${req.contentLength}`);
-        params.ContentLength = req.contentLength;
-        fileObj.size = req.contentLength;
-        sizeFlag = true;
-    }
+    };
 
     if (req.iv){
         fileObj.iv = req.iv;
@@ -81,16 +85,19 @@ module.exports = (req, res) => {
                 return;
             }
 
-            console.log(req.user);
-            req.user.spaceUsed += fileObj.size;
+            // console.log(req.user);
 
-            req.user.save((err, doc) => {
-                if (err){
-                    console.log(`Failed to save user`);
-                } else {
-                    console.log(`Updated user's space usage`);
-                }
-            })
+            if (req.user){
+                req.user.spaceUsed += fileObj.size;
+
+                req.user.save((err, doc) => {
+                    if (err){
+                        console.log(`[UPLOAD ENDPOINT] Failed to save user`);
+                    } else {
+                        console.log(`[UPLOAD ENDPOINT] Updated user's space usage`);
+                    }
+                })
+            }
 
             if (backup){
                 //We have to add info to backup object as well
@@ -120,10 +127,20 @@ module.exports = (req, res) => {
     });
 
     progress.on("httpUploadProgress", p => {
-        console.log(`Upload progress for ${id}: ${p.loaded}/${p.total}`);
+        // console.log(`[UPLOAD ENDPOINT] Upload progress for ${id}: ${p.loaded}/${p.total}`);
 
         if (sizeFlag == false && typeof p.total == "number"){
-            console.log(`Set filesize during HTTP progress to ${p.total}`);
+            
+            if (p.total > (req.originalSize + 10240)){ //The size we were told, + 10KB as generous buffer
+                progress.abort();
+                res.status(400).json({
+                    "error": "Bad filesize"
+                });
+
+                return;
+            }
+
+            console.log(`[UPLOAD ENDPOINT] Set filesize during HTTP progress to ${p.total}`);
             fileObj.size = p.total;
             sizeFlag = true;
         }        

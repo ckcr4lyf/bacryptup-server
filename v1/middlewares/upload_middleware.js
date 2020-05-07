@@ -1,16 +1,41 @@
 const User = require('../../db/user');
+const CONSTANTS = require('../../constants');
+const { newAnonFile, newFreeFile } = require('../../helpers/size_lock');
 
 module.exports = async (req, res, next) => {
 
     let filename = req.headers['filename'];
     let accessToken = req.headers['x-access-token'];
-
-    if (!accessToken){
-        res.status(401).send(">:(");
-        return;
-    }
+    let anon = false;
+    let QUOTA = 0;
 
     req.accessToken = accessToken;
+
+    if (!req.accessToken){
+        anon = true;
+        req.user = undefined;
+        QUOTA = CONSTANTS.ANON_FILE_LIMIT;
+
+        console.log(`[UPLOAD MIDDLEWARE] Anonymous upload...`);
+        //Captcha check
+    } else {
+
+        let user = await User.findOne({
+            accessToken: accessToken
+        });
+    
+        //Remove this if allow anonymous
+        if (!user){
+            res.status(404).json({
+                "error": "No user"
+            });
+
+            return;
+        }
+
+        req.user = user;
+        QUOTA = CONSTANTS.USER_FILE_LIMIT;
+    }
 
     req.iv = req.headers['x-iv'];
 
@@ -21,38 +46,31 @@ module.exports = async (req, res, next) => {
         return;
     }
 
-    req.contentLength = parseInt(req.headers['content-length']);
+    req.originalSize = parseInt(req.headers['x-original-size']);
 
-    // if (!req.contentLength || isNaN(req.contentLength)){
-    //     res.status(400).send(">:(");
-    // }
+    if (isNaN(req.originalSize)){
+        res.status(400).json({
+            "error": "Bad filesize"
+        });
 
-    if (!isNaN(req.contentLength) && req.contentLength > (1024 * 1024 * 10)){
+        return;
+    }
+
+    if (req.originalSize > QUOTA){
         res.status(413).json({
-            "code": 7,
-            "error": "Payload Too Large. Limit 10MB"
+            "error": "File too large"
         });
 
         return;
     }
 
-    let user = await User.findOne({
-        accessToken: accessToken
-    });
+    if (!anon && (req.originalSize + req.user.spaceUsed) > CONSTANTS.PER_USER_LIMIT){
+        res.status(400).json({
+            "error": "quota exhausted"
+        });
 
-    if (!user){
-        res.status(404).send(":o");
         return;
     }
-    
-    if (!isNaN(req.contentLength) && req.contentLength + user.spaceUsed > (1024 * 1024 * 150)){
-        //150MB limit for now
-        res.status(403).json({
-            "error": "You've used up too much space. Delete files then try"
-        });
-    }
-
-    req.user = user;
 
     if (!filename || filename == ""){
         res.status(400).json({
@@ -62,20 +80,66 @@ module.exports = async (req, res, next) => {
         return;
     }
 
-    req.filename = filename;
-    req.key = req.headers['x-encrypted-key'];
+    req.expiry = parseInt(req.headers['x-expiry']); //ms timestamp
 
-    if (req.key && user.accessLevel == 1){
-        //They are not allowed to use public key shit
-        res.status(401).json({
-            "error": "Encrypted key not accepted"
-        });
+    if (isNaN(req.expiry)){
+        req.expiry = CONSTANTS.HOUR;
+    } else {
+        if (anon && req.expiry > CONSTANTS.DAY){
+            res.status(400).json({
+                "error": "Invalid expiry"
+            });
+
+            return;
+        } else if (!anon && req.expiry > CONSTANTS.DAY){ //Rn both 1 day, later expand on this
+            res.status(400).json({
+                "error": "Invalid expiry"
+            });
+
+            return;
+        }
+    }
+
+    //Check the quota used
+    console.log(`[UPLOAD MIDDLEWARE] Performing quota check - original size is ${req.originalSize} and anon is ${anon}`);
+
+    try {
+        if (anon){
+            let before = Date.now();
+            let newUsed = await newAnonFile(req.originalSize);
+            let after = Date.now();
+            console.log(`[UPLOAD MIDDLEWARE] Quota check completed. New occupied size is ${newUsed}. Time: ${after - before} ms.`);
+        } else {
+            //Check the free balance instead
+            let before = Date.now();
+            let newUsed = await newFreeFile(req.originalSize);
+            let after = Date.now();
+            console.log(`[UPLOAD MIDDLEWARE] Quota check completed. New occupied size is ${newUsed}. Time: ${after - before} ms.`);
+        }
+    } catch (e){
+
+        if (e.err == "NO_LOCK"){
+            res.status(500).json({
+                "error": "Unable to check free space"
+            });
+        } else if (e.err == "INVALID_SIZE"){
+            res.status(500).json({
+                "error": "Unable to check free space"
+            });
+        } else if (e.err == "NO_SPACE"){
+            res.status(200).json({
+                "error": "Server has no space left..."
+            });
+        }
 
         return;
     }
 
-    req.backupId = req.headers['x-backup-id']; // If needed
+    // console.log(`Expiry is ${req.expiry}`);
 
-    // console.log("Middleware log:", req.filename, req.key, req.iv);
+
+
+    req.filename = filename;
+    req.quota = QUOTA;
     next();
 }

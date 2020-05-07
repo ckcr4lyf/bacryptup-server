@@ -9,7 +9,9 @@ let file_schema = new Schema({
     uniq_id: String, //Will generate this. For app.com/file/id
     etag: String,
     size: Number,
-    user: String
+    user: String,
+    expiry: Date,
+    anon: Boolean
 });
 
 module.exports = mongoose.model('File', file_schema);

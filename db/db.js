@@ -7,7 +7,7 @@ const mongo_uri = `mongodb+srv://${user}:${password}@cluster0-kbw7e.mongodb.net/
 mongoose.connect(mongo_uri);
 
 mongoose.connection.on('connected', function(){
-    console.log("Mongoose connection opened to " + mongo_uri);
+    console.log("Mongoose connection opened");
 });
 
 mongoose.connection.on('error', function(err){
