@@ -5,8 +5,23 @@ import redis from '../../redis/redis';
 
 export default async (req: Request, res: Response) => {
 
-    const spaceUsed = await redis.get('SPACE_USED');
-    console.log(spaceUsed, TOTAL_SPACE);
-    return res.status(200).end(spaceUsed);
+    let spaceUsed = 0;
+
+    try {
+        spaceUsed = parseInt(await redis.get('SPACEE_USED'));        
+    } catch {
+        return res.status(500).json({
+            "error": "ERROR_QUERYING_REDIS"
+        });
+    }
+
+    if (isNaN(spaceUsed)){
+        spaceUsed = 0;
+    }
+
+    return res.status(200).json({
+        "used": spaceUsed,
+        "total": TOTAL_SPACE
+    });
 
 }
