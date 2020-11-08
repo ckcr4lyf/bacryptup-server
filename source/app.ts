@@ -25,7 +25,8 @@ app.use((req, res, next) => {
     res.on('finish', () => {
         const timeTaken = performance.now() - req.__startAt;
         httpLogger.info(`${req.method} ${req.baseUrl}${req.path} ${res.statusCode} in ${timeTaken.toFixed(2)}ms`);
-    })
+    });
+    next();
 })
 
 app.use('/v1', router);
