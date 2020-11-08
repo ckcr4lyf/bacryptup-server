@@ -8,7 +8,11 @@ import Logger from './utilities/logger';
 declare global {
     namespace Express {
         interface Request {
-            __startAt: number
+            __startAt: number,
+            __filename: string,
+            __iv: string,
+            __fileSize: number,
+            __expiry: number
         }
     }
 }

@@ -11,7 +11,7 @@ export default async (req: Request, res: Response) => {
         spaceUsed = parseInt(await redis.get('SPACE_USED'));        
     } catch {
         return res.status(500).json({
-            "error": "ERROR_QUERYING_REDIS"
+            "error": "REDIS_QUERY_FAILED"
         });
     }
 

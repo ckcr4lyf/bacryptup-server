@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/shortid": "0.0.29",
     "aws-sdk": "^2.656.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
@@ -21,8 +22,7 @@
     "lowdb": "^1.0.0",
     "mongoose": "^5.10.13",
     "morgan": "^1.10.0",
-    "multer": "^1.4.2",
-    "shortid": "^2.2.15"
+    "multer": "^1.4.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
@@ -33,6 +33,7 @@
     "@types/jest": "^26.0.15",
     "@types/mongoose": "^5.7.37",
     "babel-jest": "^26.6.3",
-    "jest": "^26.6.3"
+    "jest": "^26.6.3",
+    "shortid": "^2.2.15"
   }
 }
