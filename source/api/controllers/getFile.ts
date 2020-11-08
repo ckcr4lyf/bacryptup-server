@@ -31,7 +31,7 @@ export default async (req: Request, res: Response) => {
         });
     }
 
-    if (file === undefined){
+    if (file === undefined || file === null){
         logger.warn(`File ${id} not found!`);
         return res.status(404).json({
             "error": "FILE_NOT_FOUND"
