@@ -8,7 +8,7 @@ export default async (req: Request, res: Response) => {
     let spaceUsed = 0;
 
     try {
-        spaceUsed = parseInt(await redis.get('SPACEE_USED'));        
+        spaceUsed = parseInt(await redis.get('SPACE_USED'));        
     } catch {
         return res.status(500).json({
             "error": "ERROR_QUERYING_REDIS"

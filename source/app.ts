@@ -15,6 +15,7 @@ declare global {
 
 const app = express();
 const httpLogger = new Logger("HTTP");
+const appLogger = new Logger("APP");
 
 app.use(express.json());
 app.disable('x-powered-by');
@@ -24,7 +25,7 @@ app.use((req, res, next) => {
     req.__startAt = performance.now();
     res.on('finish', () => {
         const timeTaken = performance.now() - req.__startAt;
-        httpLogger.info(`${req.method} ${req.baseUrl}${req.path} ${res.statusCode} in ${timeTaken.toFixed(2)}ms`);
+        httpLogger.info(`${req.method} ${req.baseUrl}${req.path} - ${res.statusCode} (${timeTaken.toFixed(2)}ms)`);
     });
     next();
 })
@@ -35,10 +36,10 @@ const IP = process.env.IP || '127.0.0.1';
 const PORT = parseInt(process.env.PORT) || 3000;
 
 http.createServer(app).listen(PORT, IP, () => {
-    console.log(`Server started at ${IP}:${PORT}`);
+    appLogger.info(`Server started at ${IP}:${PORT}`);
 });
 
 process.on('SIGINT', () => {
-    console.log(`Bye!`);
+    appLogger.info(`Bye!`);
     process.exit(0);
 });
