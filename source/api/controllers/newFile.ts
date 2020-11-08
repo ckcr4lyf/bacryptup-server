@@ -48,9 +48,14 @@ export default async (req: Request, res: Response) => {
 
         try {
             await File.create(file);
-            logger.info(`Saved file to MOngoDB`);
+            logger.info(`Saved file to MongoDB`);
+            return res.status(201).json({
+                "status": "success",
+                "fileId": id
+            });
         } catch {
             logger.error(`Failed to save document to MongoDB`);
+            return res.status(500).end();
         }
     });
 
