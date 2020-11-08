@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json());
 app.disable('x-powered-by');
 app.disable('etag');
-app.use(router);
+app.use('/v1', router);
 
 const IP = process.env.IP || '127.0.0.1';
 const PORT = parseInt(process.env.PORT) || 3000;
@@ -19,5 +19,5 @@ http.createServer(app).listen(PORT, IP, () => {
 
 process.on('SIGINT', () => {
     console.log(`Bye!`);
-    process.exit(0):
+    process.exit(0);
 });
