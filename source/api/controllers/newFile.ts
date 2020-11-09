@@ -32,7 +32,10 @@ export default async (req: Request, res: Response) => {
         logger.info(`Going to save file to MongoDB`);
 
         if (s3Err){
+            console.log(s3Err);
             logger.error(`Failed to upload to S3`);
+            // s3.deleteObject
+            //TODO: Delete if uploaded?
             return res.status(500).end();
         }
 
