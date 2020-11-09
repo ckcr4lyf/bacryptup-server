@@ -31,8 +31,6 @@ export default async (req: Request, res: Response) => {
 
     const progress = s3.upload(s3Params, async (s3Err: Error, data: AWS.S3.ManagedUpload.SendData) => {
 
-        logger.info(`Going to save file to MongoDB`);
-
         if (s3Err){
             if (s3Err.name === 'RequestAbortedError'){
                 logger.info(`Upload aborted.`);
@@ -51,6 +49,8 @@ export default async (req: Request, res: Response) => {
             size: req.__fileSize,
             expiry: new Date(Date.now() + req.__expiry)
         };
+
+        logger.info(`Going to save file to MongoDB`);
 
         try {
             await File.create(file);
