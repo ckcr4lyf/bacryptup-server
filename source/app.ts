@@ -22,7 +22,7 @@ const httpLogger = new Logger("HTTP");
 const appLogger = new Logger("APP");
 
 app.use(express.json());
-app.use(express.raw());
+// app.use(express.raw());
 app.disable('x-powered-by');
 app.disable('etag');
 
