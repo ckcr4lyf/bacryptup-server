@@ -14,6 +14,8 @@ export default async (req: Request, res: Response) => {
     const logger = new Logger('NEW_FILE');
     const s3Path = FOLDER_NAME + '/' + id + '_' + req.__filename;
 
+    console.log(req.body.length);
+
     const s3 = new AWS.S3({
         accessKeyId: AWS_KEY_ID,
         secretAccessKey: AWS_SECRET_KEY,
@@ -32,10 +34,10 @@ export default async (req: Request, res: Response) => {
         logger.info(`Going to save file to MongoDB`);
 
         if (s3Err){
-            console.log(s3Err);
-            console.log(s3Err.name, s3Err.message);
+            if (s3Err.name === 'RequestAbortedError'){
+                logger.info(`Upload aborted.`);
+            }
             logger.error(`Failed to upload to S3`);
-            // s3.deleteObject
             //TODO: Delete if uploaded?
             return res.status(500).end();
         }
