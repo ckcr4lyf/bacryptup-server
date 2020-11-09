@@ -33,6 +33,7 @@ export default async (req: Request, res: Response) => {
 
         if (s3Err){
             console.log(s3Err);
+            console.log(s3Err.name, s3Err.message);
             logger.error(`Failed to upload to S3`);
             // s3.deleteObject
             //TODO: Delete if uploaded?
