@@ -37,6 +37,15 @@ export default async (req: Request, res: Response) => {
             }
             logger.error(`Failed to upload to S3`);
             //TODO: Delete if uploaded?
+            const deleteParams = {
+                Bucket: BUCKET_NAME,
+                Key: s3Path
+            };
+            
+            s3.deleteObject(deleteParams, (deleteErr, deleteData) => {
+                console.log(deleteErr, deleteData);
+            });
+
             return res.status(500).end();
         }
 
