@@ -33,20 +33,26 @@ export default async (req: Request, res: Response) => {
 
         if (s3Err){
             if (s3Err.name === 'RequestAbortedError'){
-                logger.info(`Upload aborted.`);
-            }
-            logger.error(`Failed to upload to S3`);
-            //TODO: Delete if uploaded?
-            const deleteParams = {
-                Bucket: BUCKET_NAME,
-                Key: s3Path
-            };
-            
-            s3.deleteObject(deleteParams, (deleteErr, deleteData) => {
-                console.log(deleteErr, deleteData);
-            });
+                logger.info(`Upload aborted`);
 
-            return res.status(500).end();
+                const deleteParams = {
+                    Bucket: BUCKET_NAME,
+                    Key: s3Path
+                };
+    
+                s3.deleteObject(deleteParams, (deleteErr, deleteData) => {
+                    if(deleteErr === null){
+                        logger.info(`Deleted file from S3`);
+                    } else {
+                        logger.error(`Failed to delete ${id} from S3`);
+                    }
+                });
+
+                return res.status(400).end();
+            } else {
+                logger.error(`Failed to upload to S3`);
+                return res.status(500).end();
+            }         
         }
 
         const file = {
@@ -77,17 +83,14 @@ export default async (req: Request, res: Response) => {
     let sizeFlag = false;
 
     progress.on('httpUploadProgress', (p) => {
-
         if (sizeFlag === false){
             if (p.total > (req.__fileSize + 1024)){
+                logger.error(`Client reported ${req.__fileSize} bytes, but AWS returned progress of ${p.total} bytes. Aborting...`);
                 progress.abort();
-                res.status(400).send();
-                logger.error(`Client reported ${req.__fileSize} bytes, but AWS returned progress of ${p.total} bytes`);
-                return;
+            } else {
+                logger.info(`Set filesize during S3 HTTP upload to ${p.total}`);
+                sizeFlag = true;
             }
-
-            logger.info(`Set filesize during S3 HTTP upload to ${p.total}`);
-            sizeFlag = true;
         } else {
             console.log(p);
         }
