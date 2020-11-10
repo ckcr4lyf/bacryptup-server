@@ -5,6 +5,7 @@ import router from './api/router';
 import { performance } from 'perf_hooks';
 import Logger from './utilities/logger';
 import Cleaner from './utilities/cleaner';
+import cors from 'cors';
 
 declare global {
     namespace Express {
@@ -23,6 +24,7 @@ const httpLogger = new Logger("HTTP");
 const appLogger = new Logger("APP");
 
 app.use(express.json());
+app.use(cors());
 app.disable('x-powered-by');
 app.disable('etag');
 
