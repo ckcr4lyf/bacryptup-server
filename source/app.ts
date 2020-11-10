@@ -4,6 +4,7 @@ import http from 'http';
 import router from './api/router';
 import { performance } from 'perf_hooks';
 import Logger from './utilities/logger';
+import Cleaner from './utilities/cleaner';
 
 declare global {
     namespace Express {
@@ -22,7 +23,6 @@ const httpLogger = new Logger("HTTP");
 const appLogger = new Logger("APP");
 
 app.use(express.json());
-// app.use(express.raw());
 app.disable('x-powered-by');
 app.disable('etag');
 
@@ -48,3 +48,7 @@ process.on('SIGINT', () => {
     appLogger.info(`Bye!`);
     process.exit(0);
 });
+
+//Clean on startup, and then every hour
+Cleaner();
+setInterval(Cleaner, 1000 * 60 * 60);
